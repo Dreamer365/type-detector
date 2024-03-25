@@ -1,0 +1,33 @@
+{
+	"name": "type-detector",
+	"version": "1.0.0",
+	"description": "获取和判断数据类型的 JavaScript 工具库",
+	"keywords": [ "数据类型", "获取类型", "判断类型" ],
+	"author": "ZG",
+	"license": "MIT",
+	"private": false,
+	"scripts": {
+		"dev": "",
+		"compress": "terser --compress drop_console=['log'] --mangle -- lib/type-detector.js > lib/type-detector.min.js",
+		"compress:esm": "terser --compress drop_console=['log'] --mangle -- lib/type-detector.esm.js > lib/type-detector.esm.min.js",
+		"eslint": "eslint . --ext .js --fix",
+		"clean": "rimraf node_modules && rimraf package-lock.json"
+	},
+	"devDependencies": {
+		"@rushstack/eslint-patch": "1.8.0",
+		"eslint": "8.57.0",
+		"rimraf": "5.0.5",
+		"terser": "5.29.2"
+	},
+	"engines": {
+		"node": ">= 18.18.2",
+		"npm": ">= 9.8.1"
+	},
+	"browserslist": [
+		"Chrome >= 110",
+		"Edge >= 110",
+		"Firefox >= 110",
+		"Safari >= 15",
+		"not ie <= 11"
+	]
+}
