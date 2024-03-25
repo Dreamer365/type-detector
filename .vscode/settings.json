@@ -1,0 +1,10 @@
+{
+    "eslint.validate": [
+        "javascript"
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.fixAll.eslint": "explicit"
+    },
+    "liveServer.settings.port": 5501
+}
