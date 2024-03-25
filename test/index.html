@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8">
+        <title>TypeDetector 单元测试</title>
+        <link rel="stylesheet" href="qunit/qunit.css">
+    </head>
+    <body>
+        <div id="qunit"></div>
+
+        <script src="qunit/qunit.js"></script>
+        <script>
+            QUnit.config.noglobals = true;
+            QUnit.config.notrycatch = true;
+            QUnit.config.autostart = false;
+            QUnit.config.failOnZeroTests = false;
+            QUnit.config.urlConfig.push( {
+                id: "min",
+                label: "Use *.min.js",
+                tooltip: "使用 type-detector.min.js 文件进行单元测试"
+            } );
+        </script>
+        <script type="module">
+            import uncompressed from "../lib/type-detector.esm.js";
+            import compressed from "../lib/type-detector.esm.min.js";
+
+            const TD = data => QUnit.config.min ? compressed( data ) : uncompressed( data )
+
+            // 测试数据
+            const testData = {
+                _function: [ function () {}, function * a () {}, () => {}, async () => {} ],
+                _string: [ "", " ", "a", " a ", "10", "true", "null", "undefined", '[]', `{}`, new String( "a" ).valueOf(), String( "a" ) ],
+                _array: [ [], [ 1,2 ], new Array( 1,2 ), Array( 1,2 ) ],
+                _boolean: [ true, false, !null, !!0, !+1, new Boolean( true ).valueOf(), Boolean( true ) ],
+                _symbol: [ Symbol(), Symbol( "a" ), Symbol.for( "a" ) ],
+                _bigint: [ -10n, 0n, 10n, BigInt( 10 ) ],
+                _undefined: [ undefined ],
+                _null: [ null ],
+                _number: [ +0, -0, 0, 10, -10, 10.0, -10.0, 0.00, 0.1, new Number( 10 ).valueOf(), Number( 10 ), Math.pow(2, 53), 0x16, 0o10, 0b10 ],
+                _int: [ +0, -0, 0, 10, -10, 10.0, -10.00000, 0.00 ],
+                _float: [ 10.1, -10.1 ],
+                _nan: [ NaN ],
+                _finite: [ Infinity, -Infinity ],
+                _set: [ new Set() ],
+                _weakSet: [ new WeakSet() ],
+                _map: [ new Map() ],
+                _weakMap: [ new WeakMap() ],
+                _plainObject: [ {}, { a:1 }, new Object(), Object(), Object.create( {} ), Object.create( null ) ],
+                _element: [ document.querySelector( "html" ), document.getElementById( "qunit" ) , document.getElementsByTagName( "html" )[ 0 ], document.body ],
+                _window: [ window, window.self, window.window, window.frames ],
+                _promise: [ new Promise( ()=> {} ) ],
+                _class: [ class A {} ],
+                _blob: [ new Blob() ],
+                _arrayBuffer: [ new ArrayBuffer(8), new ArrayBuffer(32) ],
+                _emptyPlainObject: [ {}, Object(), Object.create( null ), Object.create( {} ), Object.create( { a: 1 } ) ],
+                _emptyArray: [ [], Array() ],
+                _emptyString: [ "", String(), new String().valueOf() ],
+                _arrayOnlyIncludePlainObject: [ [ {}, {}, {} ] ]
+            };
+            
+            const total = Object.values( testData ).flat().length;
+
+            // 打印未通过的测试信息
+            const printFailed = ( method, key, argument, except, actual ) => {
+                console.log( new Map( [
+                    [ "方法", method ],
+                    [ "预期", except ],
+                    [ "实际", typeof actual === "string" ? actual : !except ],
+                    [ "位置", key ],
+                    [ "参数", argument ],
+                    [ "索引", testData[ key ].indexOf( argument ) ]
+                ] ) );
+            }
+
+            // 开始测试
+            QUnit.start();
+
+            // isFunction()
+            QUnit.test( "isFunction()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_function";
+                        const result = TD( item ).isFunction();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isFunction()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isFunction( true )
+            QUnit.test( "isFunction( true )", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /^(_function|_class)+$/.test( key );
+                        const result = TD( item ).isFunction( true );
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isFunction( true )", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isString()
+            QUnit.test( "isString()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /^(_string|_emptyString)+$/.test( key );
+                        const result = TD( item ).isString();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isString()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isArray
+            QUnit.test( "isArray()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /^(_array|_emptyArray|_arrayOnlyIncludePlainObject)+$/.test( key );
+                        const result = TD( item ).isArray();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isArray()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isBoolean()
+            QUnit.test( "isBoolean()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_boolean";
+                        const result = TD( item ).isBoolean();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isBoolean()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isSymbol()
+            QUnit.test( "isSymbol()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_symbol";
+                        const result = TD( item ).isSymbol();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isSymbol()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isBigInt()
+            QUnit.test( "isBigInt()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_bigint";
+                        const result = TD( item ).isBigInt();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isBigInt()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isUndefined()
+            QUnit.test( "isUndefined()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_undefined";
+                        const result = TD( item ).isUndefined();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isUndefined()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isNull()
+            QUnit.test( "isNull()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_null";
+                        const result = TD( item ).isNull();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isNull()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isNil()
+            QUnit.test( "isNil()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /^(_null|_undefined)+$/.test( key );
+                        const result = TD( item ).isNil();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isNil()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isNumber()
+            QUnit.test( "isNumber()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /^(_number|_int|_float|_finite)+$/.test( key );
+                        const result = TD( item ).isNumber();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isNumber()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isInt()
+            QUnit.test( "isInt()", assert => {
+                assert.expect( total - testData[ "_number" ].length );
+                for ( const key in testData ) {
+                    if ( key !== "_number" ) {
+                        testData[ key ].forEach( item => {
+                            const checkKey = key === "_int";
+                            const result = TD( item ).isInt();
+                            assert[ checkKey ]( result );
+                            if ( checkKey !== result ) {
+                                printFailed( "isInt()", key, item, checkKey );
+                            }
+                        } )
+                    }
+                }
+            } )
+
+            // isFloat()
+            QUnit.test( "isFloat()", assert => {
+                assert.expect( total - testData[ "_number" ].length );
+                for ( const key in testData ) {
+                    if ( key !== "_number" ) {
+                        testData[ key ].forEach( item => {
+                            const checkKey = key === "_float";
+                            const result = TD( item ).isFloat();
+                            assert[ checkKey ]( result );
+                            if ( checkKey !== result ) {
+                                printFailed( "isFloat()", key, item, checkKey );
+                            }
+                        } )
+                    }
+                }
+            } )
+
+            // isNaN()
+            QUnit.test( "isNaN()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_nan";
+                        const result = TD( item ).isNaN();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isNaN()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isFinite()
+            QUnit.test( "isFinite()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /(_number|_int|_float)/.test( key );
+                        const result = TD( item ).isFinite();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isFinite()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isSet()
+            QUnit.test( "isSet()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_set";
+                        const result = TD( item ).isSet();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isSet()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isWeakSet()
+            QUnit.test( "isWeakSet()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_weakSet";
+                        const result = TD( item ).isWeakSet();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isWeakSet()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isMap()
+            QUnit.test( "isMap()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_map";
+                        const result = TD( item ).isMap();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isMap()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isWeakMap()
+            QUnit.test( "isWeakMap()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_weakMap";
+                        const result = TD( item ).isWeakMap();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isWeakMap()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isPlainObject()
+            QUnit.test( "isPlainObject()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = /^(_plainObject|_emptyPlainObject)+$/.test( key );
+                        const result = TD( item ).isPlainObject();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isPlainObject()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isObject()
+            QUnit.test( "isObject()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const check = typeof item === "object";
+                        const result = TD( item ).isObject();
+                        assert[ typeof item === "object" ]( result );
+                        if ( check !== result ) {
+                            printFailed( "isObject()", key, item, check );
+                        }
+                    } )
+                }
+            } )
+
+            // isElement()
+            QUnit.test( "isElement()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_element";
+                        const result = TD( item ).isElement();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isElement()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isWindow()
+            QUnit.test( "isWindow()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_window";
+                        const result = TD( item ).isWindow();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isWindow()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isPromise()
+            QUnit.test( "isPromise()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_promise";
+                        const result = TD( item ).isPromise();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isPromise()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isClass()
+            QUnit.test( "isClass()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_class";
+                        const result = TD( item ).isClass();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isClass()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isBlob()
+            QUnit.test( "isBlob()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_blob";
+                        const result = TD( item ).isBlob();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isBlob()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isArrayBuffer()
+            QUnit.test( "isArrayBuffer()", assert => {
+                assert.expect( total );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_arrayBuffer";
+                        const result = TD( item ).isArrayBuffer();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isArrayBuffer()", key, item, checkKey );
+                        }
+                    } )
+                }
+            } )
+
+            // isEmptyPlainObject()
+            QUnit.test( "isEmptyPlainObject()", assert => {
+                assert.expect( total - testData[ "_plainObject" ].length + 1 );
+                for ( const key in testData ) {
+                    if ( key !== "_plainObject" ) {
+                        testData[ key ].forEach( item => {
+                            const checkKey = key === "_emptyPlainObject";
+                            const result = TD( item ).isEmptyPlainObject();
+                            assert[ checkKey ]( result );
+                            if ( checkKey !== result ) {
+                                printFailed( "isEmptyPlainObject()", key, item, checkKey );
+                            }
+                        } )
+                    }
+                }
+                assert.false( TD( { a: 1 } ).isEmptyPlainObject() );
+            } )
+
+            // isEmptyArray()
+            QUnit.test( "isEmptyArray()", assert => {
+                assert.expect( total - testData[ "_array" ].length + 1 );
+                for ( const key in testData ) {
+                    if ( key !== "_array" ) {
+                        testData[ key ].forEach( item => {
+                            const checkKey = key === "_emptyArray";
+                            const result = TD( item ).isEmptyArray();
+                            assert[ checkKey ]( result );
+                            if ( checkKey !== result ) {
+                                printFailed( "isEmptyArray()", key, item, checkKey );
+                            }
+                        } )
+                    }
+                }
+                assert.false( TD( [ 1,2 ] ).isEmptyArray() );
+            } )
+
+            // isEmptyString()
+            QUnit.test( "isEmptyString()", assert => {
+                assert.expect( total - testData[ "_string" ].length + 3 );
+                for ( const key in testData ) {
+                    if ( key !== "_string" ) {
+                        testData[ key ].forEach( item => {
+                            const checkKey = key === "_emptyString";
+                            const result = TD( item ).isEmptyString();
+                            assert[ checkKey ]( result );
+                            if ( checkKey !== result ) {
+                                printFailed( "isEmptyString()", key, item, checkKey );
+                            }
+                        } )
+                    }
+                }
+                assert.false( TD( " 1 " ).isEmptyString() );
+                assert.false( TD( new String( "abc" ).valueOf() ).isEmptyString() );
+                assert.false( TD( String( "abc" ) ).isEmptyString() );
+            } )
+
+            // isArrayOnlyIncludePlainObject()
+            QUnit.test( "isArrayOnlyIncludePlainObject()", assert => {
+                assert.expect( total + 2 );
+                for ( const key in testData ) {
+                    testData[ key ].forEach( item => {
+                        const checkKey = key === "_arrayOnlyIncludePlainObject";
+                        const result = TD( item ).isArrayOnlyIncludePlainObject();
+                        assert[ checkKey ]( result );
+                        if ( checkKey !== result ) {
+                            printFailed( "isArrayOnlyIncludePlainObject()", key, item, checkKey );
+                        }
+                    } )
+                }
+                assert.false( TD( [ {}, null, 2 ] ).isArrayOnlyIncludePlainObject() );
+                assert.true( TD( [ {}, Object.create( null ) ] ).isArrayOnlyIncludePlainObject() );
+            } )
+
+            // type
+            QUnit.test( "type()", assert => {
+                const base = [
+                    "_function",
+                    "_string",
+                    "_array",
+                    "_boolean",
+                    "_symbol",
+                    "_bigint",
+                    "_undefined",
+                    "_null",
+                    "_number",
+                    "_nan",
+                    "_set",
+                    "_weakSet",
+                    "_map",
+                    "_weakMap",
+                    "_window",
+                    "_promise",
+                    "_class",
+                    "_blob",
+                    "_arrayBuffer",
+                ];
+                assert.expect( total );
+                base.forEach( key => {
+                    testData[ key ].forEach( data => {
+                        const type = TD( data ).type();
+                        const check = key.slice( 1 ).toLowerCase();
+                        assert.true( type === check );
+                        if ( type !== check ) {
+                            printFailed( "type()", key, data, check, type );
+                        }
+                    } )
+                } )
+                Object.keys( testData ).filter( item => !base.includes( item ) ).forEach( key => {
+                    testData[ key ].forEach( data => {
+                        const type = TD( data ).type();
+                        const check = TD( type ).isString() && /^[a-z]+$/.test( type );
+                        assert.true( check );
+                        if ( !check ) {
+                            printFailed( "type()", key, data, "string [a-z]", type );
+                        }
+                    } )
+                } )
+            } )
+        </script>
+
+    </body>
+</html>
