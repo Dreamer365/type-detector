@@ -6,7 +6,7 @@
 体积轻巧，多端兼容，可完美应用于浏览器环境和 Node 环境
 </blockquote>
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-v1.0.0-blue.svg">
+  <img src="https://img.shields.io/badge/Version-v1.0.1-blue.svg">
   <img src="https://img.shields.io/badge/License-MIT-green.svg">
 </p>
 
